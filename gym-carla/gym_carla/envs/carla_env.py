@@ -1,4 +1,7 @@
-# Based off gym_carla with several modifications
+# This file is modified from <https://github.com/cjy1992/gym-carla.git>:
+# Copyright (c) 2019: Jianyu Chen (jianyuchen@berkeley.edu)
+# This work is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
 
 from __future__ import division
 
