@@ -1,4 +1,4 @@
-These files consist of a CARLA gym environment, based on the gym_carla library. Currently, the gym environment is customized to provide observation state details using a front, rear, and 2 side cameras. A top down point-cloud based view is also made possible through LIDAR.
+These files consist of a CARLA gym environment, based on the [gym-carla](https://github.com/cjy1992/gym-carla.git) library. Currently, the gym environment is customized to provide observation state details using a front, rear, and 2 side cameras. A top down point-cloud based view is also made possible through LIDAR.
 
 The run.py file runs a DQN algorithm from stable_baselines, using the gym environment. Steps to use this environment:
 
