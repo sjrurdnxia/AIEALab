@@ -113,6 +113,13 @@ class CarlaEnv(gym.Env):
     self.lidar_bp.set_attribute('rotation_frequency', str(1.0 / 0.05))
     self.lidar_bp.set_attribute('points_per_second', '500000')
 
+    # Radar sensor
+    self.radar_bp = self.world.get_blueprint_library().find('sensor.other.radar')
+    self.radar_bp.set_attribute('horizontal_fov', '30.0')
+    self.radar_bp.set_attribute('vertical_fov', '30.0')
+    self.radar_bp.set_attribute('points_per_second', '10000')
+    self.radar_trans = carla.Transform(carla.Location(z=2))  # Change this location later
+
 
     # Camera sensor
     self.camera_img = np.zeros((4, self.obs_size, self.obs_size, 3), dtype = np.dtype("uint8"))
@@ -218,6 +225,36 @@ class CarlaEnv(gym.Env):
         self.collision_hist.pop(0)
     self.collision_hist = []
 
+    # Add radar sensor
+    self.radar_sensor = self.world.spawn_actor(self.radar_bp, self.radar_trans, attach_to=self.ego)
+    self.radar_list = o3d.geometry.PointCloud()
+    self.radar_sensor.listen(lambda data: get_radar_data(data, self.radar_list))
+    def get_radar_data(data, point_list):
+      COOL_RANGE = np.linspace[0.0, 1.0, VIRIDIS.shape[0]]
+      COOL = np.array(cm.get_cmap('winter')[COOL_RANGE])
+      COOL = COOL[:,:3]
+      radar_data = np.zeros((len(data), 4))
+
+      for i, detection in enumerate(data):
+        x = detection.depth * math.cos(detection.altitude) * math.cos(detection.azimuth)
+        y = detection.depth * math.cos(detection.altitude) * math.sin(detection.azimuth)
+        z = detection.depth * math.sin(detection.altitude)
+
+        radar_data[i, :] = [x, y, z, detection.velocity]
+      intensity = np.abs(radar_data[:, -1])
+      intensity_col = 1.0 - np.log(intensity) / np.log(np.exp(-0.004 * 100))
+      int_color = np.c_[
+        np.interp(intensity_col, COOL_RANGE, COOL[:, 0]),
+        np.interp(intensity_col, COOL_RANGE, COOL[:, 1]),
+        np.interp(intensity_col, COOL_RANGE, COOL[:, 2]),
+      ]
+
+      points = radar_data[:, :-1]
+      points[:, :1] = -points[:, :1]
+      point_list.points = o3d.utility.Vector3dVector(points)
+      point_list.colors = o3d.utility.Vector3dVector(int_color)
+
+      
     # Add lidar sensor
     self.lidar_sensor = self.world.spawn_actor(self.lidar_bp, self.lidar_trans, attach_to=self.ego)
     self.point_list = o3d.geometry.PointCloud()
