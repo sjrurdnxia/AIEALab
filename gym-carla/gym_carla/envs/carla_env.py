@@ -58,7 +58,14 @@ class CarlaEnv(gym.Env):
     self.display_route = params['display_route']
 
     
+    def get_camera_img(data):
+        pass  # or actual image processing logic
 
+    def get_camera_img2(data):
+        pass
+
+    def get_camera_img3(data):
+        pass
     # action and observation spaces
     self.discrete = params['discrete']
     self.discrete_act = [params['discrete_acc'], params['discrete_steer']] # acc, steer
@@ -230,8 +237,8 @@ class CarlaEnv(gym.Env):
     self.radar_list = o3d.geometry.PointCloud()
     self.radar_sensor.listen(lambda data: get_radar_data(data, self.radar_list))
     def get_radar_data(data, point_list):
-      COOL_RANGE = np.linspace[0.0, 1.0, VIRIDIS.shape[0]]
-      COOL = np.array(cm.get_cmap('winter')[COOL_RANGE])
+      COOL_RANGE = np.linspace(0.0, 1.0, VIRIDIS.shape[0])
+      COOL = np.array(cm.get_cmap('winter')(COOL_RANGE))
       COOL = COOL[:,:3]
       radar_data = np.zeros((len(data), 4))
 
@@ -242,7 +249,7 @@ class CarlaEnv(gym.Env):
 
         radar_data[i, :] = [x, y, z, detection.velocity]
       intensity = np.abs(radar_data[:, -1])
-      intensity_col = 1.0 - np.log(intensity) / np.log(np.exp(-0.004 * 100))
+      intensity_col = 1.0 - np.log(intensity + 1e-6) / np.log(np.exp(-0.004 * 100))
       int_color = np.c_[
         np.interp(intensity_col, COOL_RANGE, COOL[:, 0]),
         np.interp(intensity_col, COOL_RANGE, COOL[:, 1]),
