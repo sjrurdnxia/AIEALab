@@ -1,19 +1,12 @@
-# PPO from scratch – continuous (CarRacing‑v3 ready)
-# -------------------------------------------------------------
-# Minimal, **educational** implementation (~220 lines).
-# Trains a Gaussian‑policy PPO agent on Gymnasium's CarRacing‑v3
-# or any classic‑control discrete task by switching ENV_ID.
-# -------------------------------------------------------------
+
 import gymnasium as gym
 import torch, torch.nn as nn, torch.optim as optim
 import numpy as np, random, os, collections, time
 from torch.utils.tensorboard import SummaryWriter
 from torch.distributions import Normal, Categorical
 
-# ------------------------------
-# 1 ▸  Config / Hyper‑parameters
-# ------------------------------
-ENV_ID          = os.getenv("ENV", "CarRacing-v3")      # e.g. "CartPole-v1"
+
+ENV_ID          = os.getenv("ENV", "CarRacing-v3")      
 TOTAL_STEPS     = 250_000
 ROLLOUT_STEPS   = 2048
 MINIBATCH_SIZE  = 256
@@ -28,12 +21,7 @@ MAX_GRAD_NORM   = 0.5
 LOG_DIR         = os.path.expanduser("~/ppo_from_scratch/logs/ppo_scratch1")
 DEVICE          = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# fix seeds for (some) reproducibility
 random.seed(0); np.random.seed(0); torch.manual_seed(0)
-
-# ------------------------------------------------
-# 2 ▸  Env helpers / obs‑action meta‑data
-# ------------------------------------------------
 
 def make_env(seed: int = 0):
     env = gym.make(ENV_ID, render_mode=None)
@@ -52,9 +40,6 @@ if continuous:
 else:
     act_dim   = env.action_space.n
 
-# -----------------------------------
-# 3 ▸  Networks (Policy & Value)
-# -----------------------------------
 class PolicyNet(nn.Module):
     def __init__(self, continuous: bool):
         super().__init__()
@@ -99,9 +84,6 @@ optimizer = optim.Adam(list(policy.parameters())+list(value.parameters()), lr=LR
 writer = SummaryWriter(LOG_DIR)
 global_ep = 0
 
-# ---------------------------------------------------
-# 4 ▸  Advantage / return helper (GAE)
-# ---------------------------------------------------
 Transition = collections.namedtuple("Transition", "obs act logp reward done value")
 
 def compute_gae_rollout(rollout, next_value):
@@ -125,9 +107,6 @@ def compute_gae_rollout(rollout, next_value):
     logps      = torch.stack(logps)
     return advantages, returns, logps
 
-# ------------------------------------
-# 5 ▸  Training loop
-# ------------------------------------
 obs, _ = env.reset()
 obs = torch.tensor(obs, dtype=torch.float32, device=DEVICE)
 step = 0
@@ -164,8 +143,7 @@ while step < TOTAL_STEPS:
 
         if step >= TOTAL_STEPS:
             break
-
-    # ▸ GAE & returns
+            
     with torch.no_grad():
         next_val = value(obs.unsqueeze(0))[0]
     adv, ret, old_logp = compute_gae_rollout(rollout, next_val)
@@ -200,6 +178,6 @@ while step < TOTAL_STEPS:
         print(f"Step {step:>7} | Return mean {ret.mean():6.1f} | Adv mean {adv.mean():6.3f}")
         writer.flush()
 
-print("Training complete ✔️")
+print("Training complete")
 writer.close()
 env.close()
